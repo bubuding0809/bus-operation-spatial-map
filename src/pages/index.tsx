@@ -1,11 +1,89 @@
 import { type NextPage } from "next";
 import Head from "next/head";
-import Link from "next/link";
+import { ChangeEvent, useState } from "react";
+import GoogleMapWindow from "../components/GoogleMapWindow";
+import data from "../data/cleaned_data.json";
+import useColorMap from "../hooks/useColorMap";
+import { FilterConfiguration } from "../utils/types";
 
-import { trpc } from "../utils/trpc";
+const center = {
+  lat: 1.356544802537712,
+  lng: 103.81982421875,
+};
+
+const getFilterConfiguration = () => {
+  const config: FilterConfiguration = {
+    selected: "driverFilter",
+    eventFilter: {},
+    driverFilter: {},
+  };
+
+  const drivers = new Set<string>();
+  const events = new Set<string>();
+
+  data.forEach((d) => {
+    drivers.add(d.Driver);
+    events.add(d.Event);
+  });
+
+  drivers.forEach((d) => (config.driverFilter[d] = true));
+  events.forEach((e) => (config.eventFilter[e] = true));
+
+  return config;
+};
 
 const Home: NextPage = () => {
-  const hello = trpc.example.hello.useQuery({ text: "from tRPC" });
+  const [selected, setSelected] = useState<"Event" | "Driver">("Driver");
+  const [selectAll, setSelectAll] = useState(true);
+
+  const [filterConfiguration, setFilterConfiguration] =
+    useState<FilterConfiguration>(() => getFilterConfiguration());
+  const colorMap = useColorMap(data, selected);
+
+  const handleConfigChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value, checked } = e.target;
+    setFilterConfiguration((prev) => {
+      const newConfig = { ...prev };
+      if (prev.selected === "driverFilter") {
+        newConfig.driverFilter[value] = checked;
+      } else {
+        newConfig.eventFilter[value] = checked;
+      }
+      return newConfig;
+    });
+  };
+
+  const handleSelectChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const { value } = e.target;
+    setSelected(value as "Event" | "Driver");
+    setFilterConfiguration((prev) => ({
+      ...prev,
+      selected: (value.toLowerCase() + "Filter") as
+        | "driverFilter"
+        | "eventFilter",
+    }));
+  };
+
+  const handleSelectAllChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { checked } = e.target;
+    setFilterConfiguration((prev) => {
+      const newConfig = { ...prev };
+      if (prev.selected === "driverFilter") {
+        console.log("toggling events");
+
+        Object.keys(newConfig.driverFilter).forEach(
+          (k) => (newConfig.driverFilter[k] = checked)
+        );
+      } else {
+        console.log("toggling events");
+        Object.keys(newConfig.eventFilter).forEach(
+          (k) => (newConfig.eventFilter[k] = checked)
+        );
+      }
+      return newConfig;
+    });
+    setSelectAll(checked);
+  };
 
   return (
     <>
@@ -15,76 +93,69 @@ const Home: NextPage = () => {
         <link rel="icon" href="/favicon.ico" />
       </Head>
 
-      <main className="container mx-auto flex min-h-screen flex-col items-center justify-center p-4">
-        <h1 className="text-5xl font-extrabold leading-normal text-gray-700 md:text-[5rem]">
-          Create <span className="text-purple-300">T3</span> App
+      <main className="flex min-h-screen flex-col items-center justify-start bg-[#252525] p-10">
+        <h1 className="whitespace-nowrap text-4xl font-extrabold leading-normal text-slate-100">
+          Bus operation analysis
         </h1>
-        <p className="text-2xl text-gray-700">This stack uses:</p>
-        <div className="mt-3 grid gap-3 pt-3 text-center md:grid-cols-2 lg:w-2/3">
-          <TechnologyCard
-            name="NextJS"
-            description="The React framework for production"
-            documentation="https://nextjs.org/"
-          />
-          <TechnologyCard
-            name="TypeScript"
-            description="Strongly typed programming language that builds on JavaScript, giving you better tooling at any scale"
-            documentation="https://www.typescriptlang.org/"
-          />
-          <TechnologyCard
-            name="TailwindCSS"
-            description="Rapidly build modern websites without ever leaving your HTML"
-            documentation="https://tailwindcss.com/"
-          />
-          <TechnologyCard
-            name="tRPC"
-            description="End-to-end typesafe APIs made easy"
-            documentation="https://trpc.io/"
-          />
-          <TechnologyCard
-            name="Next-Auth"
-            description="Authentication for Next.js"
-            documentation="https://next-auth.js.org/"
-          />
-          <TechnologyCard
-            name="Prisma"
-            description="Build data-driven JavaScript & TypeScript apps in less time"
-            documentation="https://www.prisma.io/docs/"
-          />
+        <div className="flex gap-2 py-2">
+          <div className="flex w-full flex-wrap gap-2 rounded-lg border bg-[#F7F7F7] p-2 shadow-sm">
+            <div className="flex h-10 min-w-fit items-center justify-center gap-1 rounded-lg bg-emerald-300 px-4">
+              <label htmlFor="filter-select" className="font-bold">
+                Filter
+              </label>
+              <select
+                id="filter-select"
+                onChange={handleSelectChange}
+                className="rounded"
+              >
+                <option value="Driver">Driver</option>
+                <option value="Event">Event</option>
+              </select>
+            </div>
+            {Array.from(colorMap.entries()).map(([key, value]) => {
+              return (
+                <div
+                  key={key}
+                  className="flex h-10 min-w-fit items-center justify-center gap-1 rounded-lg bg-slate-200 px-4"
+                >
+                  <input
+                    type="checkbox"
+                    name={key}
+                    checked={
+                      filterConfiguration[filterConfiguration.selected][key]
+                    }
+                    onChange={(e) => handleConfigChange(e)}
+                    value={key}
+                  />
+                  <div
+                    className="h-4 w-4 rounded-full"
+                    style={{ backgroundColor: value }}
+                  ></div>
+                  <p>{key}</p>
+                </div>
+              );
+            })}
+            <label htmlFor="select-all" className="flex items-center gap-1">
+              <span>Select all</span>
+              <input
+                type="checkbox"
+                id="select-all"
+                onChange={handleSelectAllChange}
+                checked={selectAll}
+              />
+            </label>
+          </div>
         </div>
-        <div className="flex w-full items-center justify-center pt-6 text-2xl text-blue-500">
-          {hello.data ? <p>{hello.data.greeting}</p> : <p>Loading..</p>}
-        </div>
+        <GoogleMapWindow
+          center={center}
+          data={data}
+          filterConfiguration={filterConfiguration}
+          colorMap={colorMap}
+          column={selected}
+        />
       </main>
     </>
   );
 };
 
 export default Home;
-
-type TechnologyCardProps = {
-  name: string;
-  description: string;
-  documentation: string;
-};
-
-const TechnologyCard: React.FC<TechnologyCardProps> = ({
-  name,
-  description,
-  documentation,
-}) => {
-  return (
-    <section className="flex flex-col justify-center rounded border-2 border-gray-500 p-6 shadow-xl duration-500 motion-safe:hover:scale-105">
-      <h2 className="text-lg text-gray-700">{name}</h2>
-      <p className="text-sm text-gray-600">{description}</p>
-      <Link
-        className="m-auto mt-3 w-fit text-sm text-violet-500 underline decoration-dotted underline-offset-2"
-        href={documentation}
-        target="_blank"
-        rel="noreferrer"
-      >
-        Documentation
-      </Link>
-    </section>
-  );
-};
