@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef } from "react";
+import React from "react";
 import {
   Circle,
   GoogleMap,
@@ -65,6 +65,7 @@ const GoogleMapWindow: React.FC<GoogleMapWindowProps> = ({
       mapContainerStyle={{
         width,
         height,
+        borderRadius: "14px",
       }}
       center={center}
       zoom={12}

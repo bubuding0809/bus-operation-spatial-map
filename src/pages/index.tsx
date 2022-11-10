@@ -1,6 +1,6 @@
 import { type NextPage } from "next";
 import Head from "next/head";
-import { ChangeEvent, useState } from "react";
+import { useState } from "react";
 import GoogleMapWindow from "../components/GoogleMapWindow";
 import data from "../data/cleaned_data.json";
 import useColorMap from "../hooks/useColorMap";
@@ -41,13 +41,16 @@ const Home: NextPage = () => {
   const colorMap = useColorMap(data, selected);
 
   const handleConfigChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value, checked } = e.target;
+    const { name, checked } = e.target;
+    if (!checked) {
+      setSelectAll(false);
+    }
     setFilterConfiguration((prev) => {
       const newConfig = { ...prev };
       if (prev.selected === "driverFilter") {
-        newConfig.driverFilter[value] = checked;
+        newConfig.driverFilter[name] = checked;
       } else {
-        newConfig.eventFilter[value] = checked;
+        newConfig.eventFilter[name] = checked;
       }
       return newConfig;
     });
@@ -114,9 +117,9 @@ const Home: NextPage = () => {
             </div>
             {Array.from(colorMap.entries()).map(([key, value]) => {
               return (
-                <div
+                <label
                   key={key}
-                  className="flex h-10 min-w-fit items-center justify-center gap-1 rounded-lg bg-slate-200 px-4"
+                  className="flex h-10 min-w-fit cursor-pointer items-center justify-center gap-1 rounded-lg bg-slate-200 px-4"
                 >
                   <input
                     type="checkbox"
@@ -132,7 +135,7 @@ const Home: NextPage = () => {
                     style={{ backgroundColor: value }}
                   ></div>
                   <p>{key}</p>
-                </div>
+                </label>
               );
             })}
             <label htmlFor="select-all" className="flex items-center gap-1">
