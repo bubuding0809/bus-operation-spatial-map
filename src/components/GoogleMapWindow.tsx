@@ -16,8 +16,11 @@ type BusOperations = {
   Speed: number;
   Latitude: number;
   Longitude: number;
-  Day: number;
+  Date: number;
   Hour: number;
+  day_of_week_name: string;
+  day_of_week_number: number;
+  hour_type: string;
 };
 
 type GoogleMapWindowProps = {
@@ -98,9 +101,9 @@ const GoogleMapWindow: React.FC<GoogleMapWindowProps> = ({
         >
           <div className="flex flex-col gap-2 p-1">
             <div>
-              <h2 className="text-lg font-bold">{selected.Driver}</h2>
-              <p className=" font-normal">{selected.Event}</p>
-              <p className="mt-1">{selected.Speed}</p>
+              <h2 className="text-lg font-bold">Driver: {selected.Driver}</h2>
+              <p className=" font-normal">Event: {selected.Event}</p>
+              <p className="mt-1">Speed: {selected.Speed}km/h</p>
             </div>
             {/* <a
               className="link link-primary"
